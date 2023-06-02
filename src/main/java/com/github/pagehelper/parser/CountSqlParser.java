@@ -41,6 +41,9 @@ import java.util.*;
  * @author liuzh
  */
 public class CountSqlParser {
+    // count查询的核心 -- 提供更加智能的count查询sql组合
+
+
     public static final String KEEP_ORDERBY = "/*keep orderby*/";
     private static final Alias TABLE_ALIAS;
 
@@ -159,6 +162,7 @@ public class CountSqlParser {
      * @return
      */
     public String getSmartCountSql(String sql) {
+        // ❤❤❤❤ 如果用户没有通过Page参数指定countColumn，那么 select a,b,c 被替换为 select count(0）
         return getSmartCountSql(sql, "0");
     }
 
@@ -177,6 +181,7 @@ public class CountSqlParser {
             return getSimpleCountSql(sql, name);
         }
         try {
+            // CCJSqlParserUtil 工具用来解析sql，反向生成 statement
             stmt = CCJSqlParserUtil.parse(sql);
         } catch (Throwable e) {
             //无法解析的用一般方法返回count语句
@@ -216,6 +221,10 @@ public class CountSqlParser {
      * @return 返回count查询sql
      */
     public String getSimpleCountSql(final String sql, String name) {
+        // note： 一般方式获取CountSql -- ❤❤❤❤❤
+        // 普通方式：将 整个sql查询，作为子查询来查询总数，例如 sql = select a,b,c from t_stu where age > 10;
+        // 经过普通方式封装后变为：select count(0) from () tmp_count
+        // getSmartCountSql(...) 方法是智能的，通过CCJSqlParser 来完成的哦
         StringBuilder stringBuilder = new StringBuilder(sql.length() + 40);
         stringBuilder.append("select count(");
         stringBuilder.append(name);

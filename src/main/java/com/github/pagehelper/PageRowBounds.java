@@ -30,6 +30,8 @@ import org.apache.ibatis.session.RowBounds;
  * @author liuzenghui
  */
 public class PageRowBounds extends RowBounds {
+    // 自定义的PageRowBounds
+
     private Long total;
     private Boolean count;
 

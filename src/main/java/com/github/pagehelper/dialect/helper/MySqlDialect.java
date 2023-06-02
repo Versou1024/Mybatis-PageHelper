@@ -66,6 +66,9 @@ public class MySqlDialect extends AbstractHelperDialect {
 
     @Override
     public String getPageSql(String sql, Page page, CacheKey pageKey) {
+
+        // ❤❤ mysql 做分页查询产生PageSql的关键点，就是MySQLDialect会追加 LIMIT ?,? 操作
+
         StringBuilder sqlBuilder = new StringBuilder(sql.length() + 14);
         sqlBuilder.append(sql);
         if (page.getStartRow() == 0) {

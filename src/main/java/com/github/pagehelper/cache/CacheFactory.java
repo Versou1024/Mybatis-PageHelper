@@ -36,6 +36,7 @@ import java.util.Properties;
  * @author liuzh
  */
 public abstract class CacheFactory {
+    // 用于生成SqlCache的工厂
 
     /**
      * 创建 SQL 缓存
@@ -44,6 +45,9 @@ public abstract class CacheFactory {
      * @return
      */
     public static <K, V> Cache<K, V> createCache(String sqlCacheClass, String prefix, Properties properties) {
+        // 根据传入的sqlCacheClass，决定创建Cache
+
+        // 1. 没有传入 sqlCacheClass
         if (StringUtil.isEmpty(sqlCacheClass)) {
             try {
                 Class.forName("com.google.common.cache.Cache");
@@ -51,10 +55,13 @@ public abstract class CacheFactory {
             } catch (Throwable t) {
                 return new SimpleCache<K, V>(properties, prefix);
             }
-        } else {
+        }
+        // 2. 有传入sqlCacheClass
+        else {
             try {
                 Class<? extends Cache> clazz = (Class<? extends Cache>) Class.forName(sqlCacheClass);
                 try {
+                    // 2.1 自定义的Cache，要求必须有一个构造器，有两个参数，分别是 Properties 和 String，用来接受属性文件和属性配置前缀
                     Constructor<? extends Cache> constructor = clazz.getConstructor(Properties.class, String.class);
                     return constructor.newInstance(properties, prefix);
                 } catch (Exception e) {

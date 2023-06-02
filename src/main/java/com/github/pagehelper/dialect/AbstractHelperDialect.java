@@ -67,14 +67,18 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
     @Override
     public boolean beforeCount(MappedStatement ms, Object parameterObject, RowBounds rowBounds) {
         Page page = getLocalPage();
+        // 是否计算总数，它是去看，是否有设置count，并且只增加排序orderByOnly为false
+        // ❤❤❤ 99.99%的情况下，都是需要计算总数total的
         return !page.isOrderByOnly() && page.isCount();
     }
 
     @Override
     public String getCountSql(MappedStatement ms, BoundSql boundSql, Object parameterObject, RowBounds rowBounds, CacheKey countKey) {
+        // ❤❤❤  生成CountSql的神器
         Page<Object> page = getLocalPage();
         String countColumn = page.getCountColumn();
         if (StringUtil.isNotEmpty(countColumn)) {
+            // ❤❤ 直接通过 boundSql 拿到原生的 sql 语句，是String类型的
             return countSqlParser.getSmartCountSql(boundSql.getSql(), countColumn);
         }
         return countSqlParser.getSmartCountSql(boundSql.getSql());
@@ -83,15 +87,18 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
     @Override
     public boolean afterCount(long count, Object parameterObject, RowBounds rowBounds) {
         Page page = getLocalPage();
-        page.setTotal(count);
+        page.setTotal(count); // ❤❤❤ 在执行完毕后，会将查询的总条数 count 设置到 page 上哦
         if (rowBounds instanceof PageRowBounds) {
             ((PageRowBounds) rowBounds).setTotal(count);
         }
         //pageSize < 0 的时候，不执行分页查询
-        //pageSize = 0 的时候，还需要执行后续查询，但是不会分页
+        //pageSize = 0 的时候，还需要执行后续查询，但是不会分页 -- 不会分页意思就是：
+        // ❤❤❤❤ 全部查询出来，这是很关键的一个操作，有时候分页查询接口如果想给别人使用来全部查询的话，就可以告诉对方将 pageSize 传递为 0
         if (page.getPageSize() < 0) {
-            return false;
+            return false; // ❤❤ pageSize小于0，返回false，表示不再继续执行分页查询，这一点需要注意一下
         }
+        // ❤❤❤ 如果pageSize不等于0，比如 count = 50， pageNum = 6， pageSize = 10 那么 起始row就是 = (6-1) * 10 = 50，总共就50条数据
+        // 很明显超出查询总数，后面不用做分页查询啦
         return count > ((page.getPageNum() - 1) * page.getPageSize());
     }
 
@@ -175,7 +182,7 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
         if (page.isOrderByOnly()) {
             return sql;
         }
-        return getPageSql(sql, page, pageKey);
+        return getPageSql(sql, page, pageKey); // ❤❤ 看MySqlDialect 方言的操作即可，它会尝试追加 limit ?,?
     }
 
     /**
@@ -190,6 +197,9 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
 
     @Override
     public Object afterPage(List pageList, Object parameterObject, RowBounds rowBounds) {
+        // 没有任何 Dialect 重写该部分
+
+        // 1. 获取page参数，page它是extends ArrayList的，因此可使用addAll，将分页查询的结果全部添加到page参数中
         Page page = getLocalPage();
         if (page == null) {
             return pageList;
@@ -197,9 +207,11 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
         page.addAll(pageList);
         if (!page.isCount()) {
             page.setTotal(-1);
+            // ❤❤ 如果pageSize=0，表示不执行分页查询，那么total参数就是查询结果集的size啦
         } else if ((page.getPageSizeZero() != null && page.getPageSizeZero()) && page.getPageSize() == 0) {
             page.setTotal(pageList.size());
         } else if(page.isOrderByOnly()){
+            // 这种使用比较少，即page只是额外帮助做排序的，实际和分页查询无关，那么此时 total 就是 pageList 的 size 大小
             page.setTotal(pageList.size());
         }
         return page;

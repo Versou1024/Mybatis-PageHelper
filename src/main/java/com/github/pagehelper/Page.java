@@ -49,11 +49,11 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     /**
      * 起始行
      */
-    private int startRow;
+    private int startRow; // 比如 pageNum = 2， pageSize = 20， 那么 startRow = 20
     /**
      * 末行
      */
-    private int endRow;
+    private int endRow; // 比如 pageNum = 2， pageSize = 20， 那么 endRow = 39
     /**
      * 总数
      */
@@ -65,7 +65,7 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     /**
      * 包含count查询
      */
-    private boolean count = true;
+    private boolean count = true; // 可以看到count默认就是空的
     /**
      * 分页合理化
      */
@@ -77,7 +77,7 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     /**
      * 进行count查询的列名
      */
-    private String countColumn;
+    private String countColumn; // Count查询列名，意思就是 select count(countColumn) 以哪一个列为准，来获取列
     /**
      * 排序
      */
@@ -85,7 +85,7 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     /**
      * 只增加排序
      */
-    private boolean orderByOnly;
+    private boolean orderByOnly; //
 
     public Page() {
         super();
@@ -118,16 +118,23 @@ public class Page<E> extends ArrayList<E> implements Closeable {
      * 1 : limit
      */
     public Page(int[] rowBounds, boolean count) {
+        // rowBounds 的 0号元素 是 offset
+        // rowBounds 的 1号元素 是 limit
+
         super(0);
+        // 1.  offset=0，limit=Integer.MAX_VALUE，那就是RowBounds.Default，不做任何分页查询处理
         if (rowBounds[0] == 0 && rowBounds[1] == Integer.MAX_VALUE) {
             pageSizeZero = true;
             this.pageSize = 0;
         } else {
+            // 2. pageSize 就是 limit 没有问题，pageNum 就是需要通过 offset 和 limit 来计算出俩啦
             this.pageSize = rowBounds[1];
             this.pageNum = rowBounds[1] != 0 ? (int) (Math.ceil(((double) rowBounds[0] + rowBounds[1]) / rowBounds[1])) : 0;
         }
+        // 3. offset 很明显就是 startRow
         this.startRow = rowBounds[0];
         this.count = count;
+        // 5. endRow 很明显就是 起始行startRow加上limit
         this.endRow = this.startRow + rowBounds[1];
     }
 

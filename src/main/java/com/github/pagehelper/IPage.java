@@ -28,6 +28,7 @@ package com.github.pagehelper;
  * @author liuzh
  */
 public interface IPage {
+    // 提供：pageNum、pageSize、orderBy
 
     Integer getPageNum();
 

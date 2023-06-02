@@ -47,19 +47,25 @@ import java.util.Properties;
  * @version 5.0.0
  */
 public class PageHelper extends PageMethod implements Dialect {
+    // ❤❤❤ 核心类，分页拦截器通用的默认的Dialect，就是当前类哦
+    // PageHelper 作为默认使用Dialect，本身不具备方言的处理能力
+    // 作为委托代理模式下的代理人，任何 Dialect 的方法都是 交给 PageAutoDialect 来执行的
+
     private PageParams pageParams;
-    private PageAutoDialect autoDialect;
+    private PageAutoDialect autoDialect; // 实际上PageHelper并不是真正完成count和分页查询的，主要是作为路由器的效果，分发到autoDialect上
 
     @Override
     public boolean skip(MappedStatement ms, Object parameterObject, RowBounds rowBounds) {
+        // 这一步属实：不太理解
         if (ms.getId().endsWith(MSUtils.COUNT)) {
             throw new RuntimeException("在系统中发现了多个分页插件，请检查系统配置!");
         }
+        // 尝试获取Page参数哦，非常关键
         Page page = pageParams.getPage(parameterObject, rowBounds);
         if (page == null) {
-            return true;
+            return true; // page 为空，就直接跳过拦截
         } else {
-            //设置默认的 count 列
+            // 设置默认的 count 列
             if (StringUtil.isEmpty(page.getCountColumn())) {
                 page.setCountColumn(pageParams.getCountColumn());
             }
@@ -105,7 +111,7 @@ public class PageHelper extends PageMethod implements Dialect {
     @Override
     public Object afterPage(List pageList, Object parameterObject, RowBounds rowBounds) {
         //这个方法即使不分页也会被执行，所以要判断 null
-        AbstractHelperDialect delegate = autoDialect.getDelegate();
+        AbstractHelperDialect delegate = autoDialect.getDelegate(); // PageAutoDialect 中的 delegate 在 100% 的情况下，其实都 MySQLDialect
         if (delegate != null) {
             return delegate.afterPage(pageList, parameterObject, rowBounds);
         }
@@ -115,16 +121,19 @@ public class PageHelper extends PageMethod implements Dialect {
     @Override
     public void afterAll() {
         //这个方法即使不分页也会被执行，所以要判断 null
-        AbstractHelperDialect delegate = autoDialect.getDelegate();
+        AbstractHelperDialect delegate = autoDialect.getDelegate(); // 委托delegate，99.99%都是 MySqlDialect
         if (delegate != null) {
-            delegate.afterAll();
+            delegate.afterAll(); // MySqlDialect 没有重写 afterall，所以是一个空方法
             autoDialect.clearDelegate();
         }
+        // ❤❤❤ ThreadLocal的Page参数只会使用一次
         clearPage();
     }
 
     @Override
     public void setProperties(Properties properties) {
+        // ❤❤ 通过配置来设置pageParms和autoDialect
+
         setStaticProperties(properties);
         pageParams = new PageParams();
         autoDialect = new PageAutoDialect();

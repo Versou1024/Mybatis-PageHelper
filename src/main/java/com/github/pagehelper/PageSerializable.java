@@ -31,6 +31,8 @@ import java.util.List;
  * @author liuzh
  */
 public class PageSerializable<T> implements Serializable {
+    // Page 参数如果要支持序列化，那就通过这个类来实现
+
     private static final long serialVersionUID = 1L;
     //总记录数
     protected long    total;

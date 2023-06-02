@@ -38,6 +38,20 @@ import java.util.Properties;
  * @author liuzh
  */
 public interface Dialect {
+    // 掌握主要方法：
+    // 1. skip 检查是否需要做分页
+
+    // 2. beforeCount 执行分页前，返回 true 会进行 count 总数查询，false 会继续下面的 beforePage 判断
+    // 3. getCountSql 生成 count 查询 sql
+    // 4. afterCount 执行完 count 查询后
+
+    // 5. beforePage 执行分页前，返回 true 会进行 分页 查询，false 会返回默认的查询结果
+    // 6. getPageSql 生成 分页 查询 sql （在原有的sql上，根据数据库类型，例如MySQL，追加 limit n,m 的操作）
+    // 7. afterPage 执行完 分页 查询后，拦截器中直接 return 该方法的返回值
+
+    // 8. afterAll 钩子方法：在所有方法执行完之后再执行
+
+
     /**
      * 跳过 count 和 分页查询
      *

@@ -46,6 +46,7 @@ public abstract class PageObjectUtil {
     protected static Map<String, String> PARAMS = new HashMap<String, String>(6, 1);
 
     static {
+        // 允许尝试从 Request 中获取
         try {
             requestClass = Class.forName("javax.servlet.ServletRequest");
             getParameterMap = requestClass.getMethod("getParameterMap", new Class[]{});
@@ -71,6 +72,7 @@ public abstract class PageObjectUtil {
         if (params == null) {
             throw new PageException("无法获取分页查询参数!");
         }
+        // 1. ❤❤❤❤❤ 直接有实现IPage接口 -- 就通过IPage构造Page即可
         if(params instanceof IPage){
             IPage pageParams = (IPage) params;
             Page page = null;
@@ -88,16 +90,19 @@ public abstract class PageObjectUtil {
             }
             return page;
         }
+        // 2. 参数没有实现IPage接口，通过Request的方式来获取
         int pageNum;
         int pageSize;
         MetaObject paramsObject = null;
         if (hasRequest && requestClass.isAssignableFrom(params.getClass())) {
+            // 比较苛刻，他要求的是，你的传参params的超类是 ServletRequest -- 感觉一般不大可能生效
             try {
                 paramsObject = MetaObjectUtil.forObject(getParameterMap.invoke(params, new Object[]{}));
             } catch (Exception e) {
                 //忽略
             }
         } else {
+            // 如果可以的话，通常还是走这里 ❤❤❤❤❤ 比较强大的，即使你是HashMap、StrictMap、ParamMap也可以有效查询pageNumpageSize参数的哦
             paramsObject = MetaObjectUtil.forObject(params);
         }
         if (paramsObject == null) {
@@ -109,6 +114,7 @@ public abstract class PageObjectUtil {
             hasOrderBy = true;
         }
         try {
+            // ❤❤ 以此为例，说明如何获取pageNum
             Object _pageNum = getParamValue(paramsObject, "pageNum", required);
             Object _pageSize = getParamValue(paramsObject, "pageSize", required);
             if (_pageNum == null || _pageSize == null) {

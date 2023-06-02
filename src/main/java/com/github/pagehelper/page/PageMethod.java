@@ -36,8 +36,13 @@ import java.util.Properties;
  * @author liuzh
  */
 public abstract class PageMethod {
+    // ❤❤❤ 核心方法：掌握
+
+    // 缓存分页数据Page：和当前线程板顶
+    // ❤❤❤❤❤❤❤
     protected static final ThreadLocal<Page> LOCAL_PAGE = new ThreadLocal<Page>();
-    protected static boolean DEFAULT_COUNT = true;
+    protected static boolean DEFAULT_COUNT = true; // 默认为true，即默认是需要查询total总数的
+    // 当然你是可以同Properties配置属性文件，设置 defaultCount 为 false 来改变这种行为的哦
 
     /**
      * 设置 Page 参数
@@ -99,6 +104,10 @@ public abstract class PageMethod {
      * @param pageSize 每页显示数量
      */
     public static <E> Page<E> startPage(int pageNum, int pageSize) {
+        // ❤❤❤❤❤❤❤就就❤❤
+        // 一旦调用 PageHelper.startPage(...) 操作就意味着会生成一个 Page，并且存入到 ThreadLocal<Page> 中
+        // 并且这种方式是指定要做count查询的，如果不是给前端展示查询
+        // 如果有可能，建议调用下面的方法 startPage(int pageNum, int pageSize, boolean count) 好处就是将count设置为false，不用去做total总数查询的操作
         return startPage(pageNum, pageSize, DEFAULT_COUNT);
     }
 
@@ -136,6 +145,11 @@ public abstract class PageMethod {
      * @param pageSizeZero true且pageSize=0时返回全部结果，false时分页,null时用默认配置
      */
     public static <E> Page<E> startPage(int pageNum, int pageSize, boolean count, Boolean reasonable, Boolean pageSizeZero) {
+        // ❤❤❤❤❤ 核心关键方法
+        // 在WMS系统中，就是使用 PageHelper.startPage() 来开启对下一个查询的分页处理的哦，通常如下：
+        // pageNum 有值、 pageSize 有值、count 为 true、reasonable为flase、pageSizeZero也是false
+
+
         Page<E> page = new Page<E>(pageNum, pageSize, count);
         page.setReasonable(reasonable);
         page.setPageSizeZero(pageSizeZero);
@@ -144,7 +158,7 @@ public abstract class PageMethod {
         if (oldPage != null && oldPage.isOrderByOnly()) {
             page.setOrderBy(oldPage.getOrderBy());
         }
-        setLocalPage(page);
+        setLocalPage(page); // ❤❤❤❤❤  这就是为什么调用 PageInterceptor#startPage后，后续的所有操作就会
         return page;
     }
 

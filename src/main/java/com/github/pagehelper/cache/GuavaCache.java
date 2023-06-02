@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * @author liuzh
  */
 public class GuavaCache<K, V> implements Cache<K, V> {
+    // 使用的很少 -- 直接调过
 
     private final com.google.common.cache.Cache<K, V> CACHE;
 

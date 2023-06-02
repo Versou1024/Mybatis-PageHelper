@@ -30,6 +30,7 @@ package com.github.pagehelper.cache;
  * @author liuzh
  */
 public interface Cache<K, V> {
+    // 缓存的作用：用来缓存查询结果，因此主要提供查询和存储的API
 
     V get(K key);
 

@@ -126,7 +126,9 @@ public abstract class ExecutorUtil {
         Map<String, Object> additionalParameters = getAdditionalParameter(boundSql);
         //创建 count 查询的缓存 key
         CacheKey countKey = executor.createCacheKey(countMs, parameter, RowBounds.DEFAULT, boundSql);
-        //调用方言获取 count sql
+        //调用方言获取 count sql -- ❤❤❤❤❤ 不做过多了解,主要知道有两种方式i
+        // 第一种：CountSqlParser.getSmartCountSql(...) 使用的是 CCJSqlParser 它会将 sql 反向解析为 Statement，然后填充 conut
+        // 第二种：CountSqlParser.getSimplerCountSql(...) 通过子查询的方式实现，即将查询语句做子查询，外层查询使用 select count(0） from (子查询) tmp_count
         String countSql = dialect.getCountSql(countMs, boundSql, parameter, rowBounds, countKey);
         //countKey.update(countSql);
         BoundSql countBoundSql = new BoundSql(countMs.getConfiguration(), countSql, boundSql.getParameterMappings(), parameter);
@@ -134,8 +136,9 @@ public abstract class ExecutorUtil {
         for (String key : additionalParameters.keySet()) {
             countBoundSql.setAdditionalParameter(key, additionalParameters.get(key));
         }
-        //执行 count 查询
+        // 执行器 -- 执行 count 查询 -- sql查询
         Object countResultList = executor.query(countMs, parameter, RowBounds.DEFAULT, resultHandler, countKey, countBoundSql);
+        // 返回的结果
         Long count = (Long) ((List) countResultList).get(0);
         return count;
     }
@@ -164,7 +167,7 @@ public abstract class ExecutorUtil {
             CacheKey pageKey = cacheKey;
             //处理参数对象
             parameter = dialect.processParameterObject(ms, parameter, boundSql, pageKey);
-            //调用方言获取分页 sql
+            //调用方言获取分页 sql --- ❤❤ 关键点是这里，会尝试追加 limit ?,?
             String pageSql = dialect.getPageSql(ms, boundSql, parameter, rowBounds, pageKey);
             BoundSql pageBoundSql = new BoundSql(ms.getConfiguration(), pageSql, boundSql.getParameterMappings(), parameter);
 

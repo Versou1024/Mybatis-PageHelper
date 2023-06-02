@@ -49,6 +49,11 @@ import java.util.Properties;
     }
 )
 public class QueryInterceptor implements Interceptor {
+    // PageInterceptor 是用来做分页查询的插件
+    // 那这个玩意儿是干啥的 -- 提供一个通用模板？？？？？
+    // ❤❤❤ 也就是说，如果开发者想要自己做一个查询拦截器，那么就可以使用copy一份QueryInterceptor来处理
+    // 实际这个类，是无法使用的，甚至继承啦也没有任何用，因为没有流出钩子方法
+
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {

@@ -81,19 +81,21 @@ public class PageAutoDialect {
     }
 
     //自动获取dialect,如果没有setProperties或setSqlUtilConfig，也可以正常进行
+    // 默认为true，但如果设置有helperDialect参数，那么就是autoDialect默认为false。并且通过设置的 helperDialect 设置对应的 delegate 委托对象
     private boolean autoDialect = true;
     //多数据源时，获取jdbcurl后是否关闭数据源
     private boolean closeConn = true;
     //属性配置
     private Properties properties;
-    //缓存
+    //缓存 -- 根据url,缓存对应的Dialect
     private Map<String, AbstractHelperDialect> urlDialectMap = new ConcurrentHashMap<String, AbstractHelperDialect>();
     private ReentrantLock lock = new ReentrantLock();
-    private AbstractHelperDialect delegate;
-    private ThreadLocal<AbstractHelperDialect> dialectThreadLocal = new ThreadLocal<AbstractHelperDialect>();
+    private AbstractHelperDialect delegate; // ❤❤ 通常都是MySQLDialect
+    private ThreadLocal<AbstractHelperDialect> dialectThreadLocal = new ThreadLocal<AbstractHelperDialect>(); // 用的ThreadLocal保存的哦
 
     //多数据动态获取时，每次需要初始化
     public void initDelegateDialect(MappedStatement ms) {
+        // 自动映射方言的前提是：delegate 委托对象没有被指定，但是 wms 系统中设置有 helperDialect = mysql 时，就会使得 delegate 为 MySQLDialect
         if (delegate == null) {
             if (autoDialect) {
                 this.delegate = getDialect(ms);
@@ -161,6 +163,7 @@ public class PageAutoDialect {
         } catch (Exception e) {
             throw new PageException("初始化 helper [" + dialectClass + "]时出错:" + e.getMessage(), e);
         }
+        // ❤❤❤ 将properties的属性配置配置到dialect中 -- MySQLDialect 乜有重写该方法，因此不会做任何配置，开箱即用
         dialect.setProperties(properties);
         return dialect;
     }
@@ -236,6 +239,8 @@ public class PageAutoDialect {
             registerDialectAlias("sqlserver", SqlServer2012Dialect.class);
             registerDialectAlias("sqlserver2008", SqlServerDialect.class);
         }
+        // dialectAlias 配置方言别名：例如 mysql=com.mysql.jdbc.XXxDialect
+        // 通常都不需要定制Dialect，绝大部分数据库已经包含在其中啦
         String dialectAlias = properties.getProperty("dialectAlias");
         if (StringUtil.isNotEmpty(dialectAlias)) {
             String[] alias = dialectAlias.split(";");
@@ -257,8 +262,9 @@ public class PageAutoDialect {
             }
         }
         //指定的 Helper 数据库方言，和  不同
+        // ❤❤❤❤❤  例如公司中，基本都是将 helperDialect 配置为 mysql，当然这取决于你的数据库类型不过通常都是mysql
         String dialect = properties.getProperty("helperDialect");
-        //运行时获取数据源
+        // 运行时获取数据源 -- 基本不做配置
         String runtimeDialect = properties.getProperty("autoRuntimeDialect");
         //1.动态多数据源
         if (StringUtil.isNotEmpty(runtimeDialect) && "TRUE".equalsIgnoreCase(runtimeDialect)) {
@@ -267,13 +273,13 @@ public class PageAutoDialect {
         }
         //2.动态获取方言
         else if (StringUtil.isEmpty(dialect)) {
-            autoDialect = true;
+            autoDialect = true; // 如果用户没有指定 helperDialect，那么此时就只能将autoDialect谁为true，到时候自动根据sql判断
             this.properties = properties;
         }
         //3.指定方言
         else {
             autoDialect = false;
-            this.delegate = initDialect(dialect, properties);
+            this.delegate = initDialect(dialect, properties); // ❤❤❤❤ 假设配置 helperDialect 为 mysql，那么这里就需要根据 String dialect 做初始化操作
         }
     }
 }

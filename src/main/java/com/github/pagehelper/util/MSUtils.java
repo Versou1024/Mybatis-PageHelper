@@ -48,6 +48,8 @@ public class MSUtils {
      * @return
      */
     public static MappedStatement newCountMappedStatement(MappedStatement ms, String newMsId) {
+        // Count查询语句的 MappedStatement 绝大部分参数实际上还是 来源于分页查询的ms
+        // 只是说将 MappedStatement 的id 给替换啦 --- 通常是在原有的 ms.getId() + "_COUNT" 这样追加的
         MappedStatement.Builder builder = new MappedStatement.Builder(ms.getConfiguration(), newMsId, ms.getSqlSource(), ms.getSqlCommandType());
         builder.resource(ms.getResource());
         builder.fetchSize(ms.getFetchSize());
@@ -65,6 +67,7 @@ public class MSUtils {
         builder.parameterMap(ms.getParameterMap());
         //count查询返回值int
         List<ResultMap> resultMaps = new ArrayList<ResultMap>();
+        // ❤❤❤❤ 构造专门用于接受 count查询 返回的总数，很简单，只接受 Long 类型的值即可
         ResultMap resultMap = new ResultMap.Builder(ms.getConfiguration(), ms.getId(), Long.class, EMPTY_RESULTMAPPING).build();
         resultMaps.add(resultMap);
         builder.resultMaps(resultMaps);

@@ -28,6 +28,7 @@ package com.github.pagehelper;
  * 分页插件异常
  */
 public class PageException extends RuntimeException {
+    // 分页查询异常 --
     public PageException() {
         super();
     }
